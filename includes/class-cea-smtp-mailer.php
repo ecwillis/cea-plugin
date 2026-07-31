@@ -103,7 +103,10 @@ final class CEA_SMTP_Mailer {
 	}
 
 	/**
-	 * Applies the configured From email when sender overrides are enabled.
+	 * Applies the configured From email to WordPress defaults and invalid senders.
+	 *
+	 * A valid custom sender supplied by other code remains intact unless the
+	 * administrator explicitly enables sender overrides.
 	 *
 	 * @param string $from_email Existing From email.
 	 * @return string
@@ -111,7 +114,15 @@ final class CEA_SMTP_Mailer {
 	public static function filter_from_email( $from_email ) {
 		$settings = CEA_SMTP_Settings::get_settings();
 
-		if ( $settings['enabled'] && $settings['force_from'] && ! empty( $settings['from_email'] ) ) {
+		if ( ! $settings['enabled'] || empty( $settings['from_email'] ) ) {
+			return $from_email;
+		}
+
+		if (
+			$settings['force_from']
+			|| ! is_email( $from_email )
+			|| self::is_wordpress_default_from_email( $from_email )
+		) {
 			return $settings['from_email'];
 		}
 
@@ -119,7 +130,7 @@ final class CEA_SMTP_Mailer {
 	}
 
 	/**
-	 * Applies the configured From name when sender overrides are enabled.
+	 * Applies the configured From name to the WordPress default sender.
 	 *
 	 * @param string $from_name Existing From name.
 	 * @return string
@@ -127,10 +138,35 @@ final class CEA_SMTP_Mailer {
 	public static function filter_from_name( $from_name ) {
 		$settings = CEA_SMTP_Settings::get_settings();
 
-		if ( $settings['enabled'] && $settings['force_from'] && ! empty( $settings['from_name'] ) ) {
+		if (
+			$settings['enabled']
+			&& ! empty( $settings['from_name'] )
+			&& ( $settings['force_from'] || 'WordPress' === $from_name )
+		) {
 			return $settings['from_name'];
 		}
 
 		return $from_name;
+	}
+
+	/**
+	 * Returns whether an address is WordPress's generated default sender.
+	 *
+	 * @param string $from_email From email address.
+	 * @return bool
+	 */
+	private static function is_wordpress_default_from_email( $from_email ) {
+		$site_name = wp_parse_url( network_home_url(), PHP_URL_HOST );
+		$default   = 'wordpress@';
+
+		if ( null !== $site_name ) {
+			if ( 0 === strpos( $site_name, 'www.' ) ) {
+				$site_name = substr( $site_name, 4 );
+			}
+
+			$default .= $site_name;
+		}
+
+		return strtolower( $default ) === strtolower( $from_email );
 	}
 }

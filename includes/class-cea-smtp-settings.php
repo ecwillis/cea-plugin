@@ -339,8 +339,8 @@ final class CEA_SMTP_Settings {
 			}
 		}
 
-		if ( ! empty( $settings['force_from'] ) && empty( $settings['from_email'] ) ) {
-			$errors['from_email'] = __( 'A From email address is required when sender overrides are enabled.', 'cea-plugin' );
+		if ( empty( $settings['from_email'] ) || ! is_email( $settings['from_email'] ) ) {
+			$errors['from_email'] = __( 'A valid From email address is required for SMTP delivery.', 'cea-plugin' );
 		}
 
 		return $errors;

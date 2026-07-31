@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CEA Plugin
  * Description: A multipurpose WordPress plugin with configurable SMTP email delivery.
- * Version: 0.2.0
+ * Version: 0.2.1
  * Requires at least: 5.7
  * Requires PHP: 7.4
  * Text Domain: cea-plugin
@@ -10,7 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CEA_PLUGIN_VERSION', '0.2.0' );
+define( 'CEA_PLUGIN_VERSION', '0.2.1' );
 define( 'CEA_PLUGIN_FILE', __FILE__ );
 define( 'CEA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 

@@ -338,7 +338,7 @@ final class CEA_SMTP_Settings_Page {
 		$settings = CEA_SMTP_Settings::get_settings();
 		?>
 		<input type="email" class="regular-text" id="cea-smtp-from-email" name="<?php echo esc_attr( CEA_SMTP_Settings::OPTION_NAME ); ?>[from_email]" value="<?php echo esc_attr( $settings['from_email'] ); ?>">
-		<p class="description"><?php echo esc_html__( 'Use an address permitted by the SMTP provider and its authenticated sending domain.', 'cea-plugin' ); ?></p>
+		<p class="description"><?php echo esc_html__( 'Required. Use an address permitted by the SMTP provider and its authenticated sending domain.', 'cea-plugin' ); ?></p>
 		<?php
 	}
 
@@ -364,8 +364,9 @@ final class CEA_SMTP_Settings_Page {
 		?>
 		<label for="cea-smtp-force-from">
 			<input type="checkbox" id="cea-smtp-force-from" name="<?php echo esc_attr( CEA_SMTP_Settings::OPTION_NAME ); ?>[force_from]" value="1" <?php checked( $settings['force_from'] ); ?>>
-			<?php echo esc_html__( 'Override sender details supplied by WordPress, themes, and other plugins', 'cea-plugin' ); ?>
+			<?php echo esc_html__( 'Override valid custom sender details supplied by themes and other plugins', 'cea-plugin' ); ?>
 		</label>
+		<p class="description"><?php echo esc_html__( 'The configured sender always replaces WordPress’s generated default address. Enable this option to replace custom From headers too.', 'cea-plugin' ); ?></p>
 		<?php
 	}
 
