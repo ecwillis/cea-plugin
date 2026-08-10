@@ -133,6 +133,7 @@ Run JavaScript syntax checks:
 ```bash
 node --check assets/admin/forms.js
 node --check assets/public/forms.js
+node tests/forms-js-smoke.js
 ```
 
 Run the non-mutating WordPress smoke tests with the plugin active:

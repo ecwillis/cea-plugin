@@ -17,7 +17,8 @@
       token.value = uuid();
     }
 
-    if (startedAt) {
+    // Preserve the server-rendered value so submitting does not restart the timer.
+    if (startedAt && !startedAt.value) {
       startedAt.value = Math.floor(Date.now() / 1000);
     }
   }
