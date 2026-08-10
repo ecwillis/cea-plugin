@@ -19,11 +19,47 @@
   }
 
   function initializeSortable() {
-    $('.cea-form-sortable').sortable({
+    var lists = $('.cea-form-sortable');
+
+    lists.sortable({
       axis: 'y',
+      cancel: 'input, textarea, select, option',
+      distance: 5,
       handle: '.cea-form-drag-handle',
       items: '> .cea-form-builder-row',
-      placeholder: 'cea-form-builder-placeholder'
+      placeholder: 'cea-form-builder-placeholder',
+      update: function() {
+        updateMoveButtons(this);
+      }
+    });
+
+    lists.each(function() {
+      updateMoveButtons(this);
+    });
+  }
+
+  function updateMoveButtons(list) {
+    var rows;
+
+    if (!list) {
+      return;
+    }
+
+    rows = Array.prototype.filter.call(list.children, function(child) {
+      return child.matches('.cea-form-builder-row');
+    });
+
+    rows.forEach(function(row, index) {
+      var up = row.querySelector('[data-cea-move="up"]');
+      var down = row.querySelector('[data-cea-move="down"]');
+
+      if (up) {
+        up.disabled = index === 0;
+      }
+
+      if (down) {
+        down.disabled = index === rows.length - 1;
+      }
     });
   }
 
@@ -45,6 +81,7 @@
     if (list && html) {
       list.insertAdjacentHTML('beforeend', html);
       updateChoiceVisibility(list.lastElementChild);
+      updateMoveButtons(list);
     }
   });
 
@@ -55,14 +92,45 @@
 
     if (list && html) {
       list.insertAdjacentHTML('beforeend', html);
+      updateMoveButtons(list);
     }
   });
 
   $(document).on('click', '[data-cea-remove]', function() {
+    var list = this.closest('[data-cea-list]');
     var message = window.ceaFormsAdmin ? window.ceaFormsAdmin.removeConfirm : 'Remove this item?';
 
     if (window.confirm(message)) {
       $(this).closest('.cea-form-builder-row').remove();
+      updateMoveButtons(list);
+    }
+  });
+
+  $(document).on('click', '[data-cea-move]', function() {
+    var direction = this.getAttribute('data-cea-move');
+    var row = this.closest('.cea-form-builder-row');
+    var list = row ? row.parentElement : null;
+    var sibling = row ? (direction === 'up' ? row.previousElementSibling : row.nextElementSibling) : null;
+
+    if (!list || !sibling) {
+      return;
+    }
+
+    if (direction === 'up') {
+      list.insertBefore(row, sibling);
+    } else {
+      list.insertBefore(sibling, row);
+    }
+
+    updateMoveButtons(list);
+    this.focus();
+
+    if (window.wp && window.wp.a11y) {
+      window.wp.a11y.speak(
+        direction === 'up'
+          ? (window.ceaFormsAdmin ? window.ceaFormsAdmin.movedUp : 'Item moved up.')
+          : (window.ceaFormsAdmin ? window.ceaFormsAdmin.movedDown : 'Item moved down.')
+      );
     }
   });
 

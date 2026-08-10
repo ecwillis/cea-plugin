@@ -136,7 +136,7 @@ final class CEA_Forms_Admin {
 		$has_saved_fields = metadata_exists( 'post', $post->ID, CEA_Forms::META_FIELDS );
 		$fields           = $has_saved_fields ? CEA_Forms::get_fields( $post->ID ) : array( CEA_Form_Schema::get_default_field() );
 		?>
-		<p><?php echo esc_html__( 'Add fields, choose their types, and drag them into the order visitors should see. Field keys remain stable when labels change.', 'cea-plugin' ); ?></p>
+		<p><?php echo esc_html__( 'Add fields and choose their types. Reorder them by dragging the four-arrow control or using the Move up and Move down buttons. Field keys remain stable when labels change.', 'cea-plugin' ); ?></p>
 		<div class="cea-form-sortable" id="cea-form-fields-list" data-cea-list="fields">
 			<?php foreach ( $fields as $index => $field ) : ?>
 				<?php self::render_field_row( (string) $index, $field ); ?>
@@ -166,9 +166,17 @@ final class CEA_Forms_Admin {
 		?>
 		<div class="cea-form-builder-row" data-cea-row="field">
 			<div class="cea-form-builder-row__header">
-				<button type="button" class="button-link cea-form-drag-handle" aria-label="<?php echo esc_attr__( 'Reorder field', 'cea-plugin' ); ?>">
-					<span class="dashicons dashicons-move" aria-hidden="true"></span>
-				</button>
+				<span class="cea-form-reorder-controls">
+					<button type="button" class="button-link cea-form-drag-handle" aria-label="<?php echo esc_attr__( 'Drag field to reorder', 'cea-plugin' ); ?>" title="<?php echo esc_attr__( 'Drag to reorder', 'cea-plugin' ); ?>">
+						<span class="dashicons dashicons-move" aria-hidden="true"></span>
+					</button>
+					<button type="button" class="button-link" data-cea-move="up" aria-label="<?php echo esc_attr__( 'Move field up', 'cea-plugin' ); ?>" title="<?php echo esc_attr__( 'Move up', 'cea-plugin' ); ?>">
+						<span class="dashicons dashicons-arrow-up-alt2" aria-hidden="true"></span>
+					</button>
+					<button type="button" class="button-link" data-cea-move="down" aria-label="<?php echo esc_attr__( 'Move field down', 'cea-plugin' ); ?>" title="<?php echo esc_attr__( 'Move down', 'cea-plugin' ); ?>">
+						<span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span>
+					</button>
+				</span>
 				<strong data-cea-row-title><?php echo esc_html( $field['label'] ); ?></strong>
 				<button type="button" class="button-link-delete" data-cea-remove><?php echo esc_html__( 'Remove', 'cea-plugin' ); ?></button>
 			</div>
@@ -235,7 +243,7 @@ final class CEA_Forms_Admin {
 		$actions           = $has_saved_actions ? CEA_Forms::get_actions( $post->ID ) : array( CEA_Form_Schema::get_default_action() );
 		$definitions       = CEA_Form_Action_Registry::get_all();
 		?>
-		<p><?php echo esc_html__( 'Enabled actions run independently after a valid submission. Visitors are not shown delivery or credential errors.', 'cea-plugin' ); ?></p>
+		<p><?php echo esc_html__( 'Enabled actions run independently after a valid submission. Reorder them by dragging the four-arrow control or using the Move up and Move down buttons.', 'cea-plugin' ); ?></p>
 		<div class="cea-form-sortable" id="cea-form-actions-list" data-cea-list="actions">
 			<?php foreach ( $actions as $index => $action ) : ?>
 				<?php self::render_action_row( (string) $index, $action ); ?>
@@ -294,9 +302,17 @@ final class CEA_Forms_Admin {
 		?>
 		<div class="cea-form-builder-row" data-cea-row="action">
 			<div class="cea-form-builder-row__header">
-				<button type="button" class="button-link cea-form-drag-handle" aria-label="<?php echo esc_attr__( 'Reorder action', 'cea-plugin' ); ?>">
-					<span class="dashicons dashicons-move" aria-hidden="true"></span>
-				</button>
+				<span class="cea-form-reorder-controls">
+					<button type="button" class="button-link cea-form-drag-handle" aria-label="<?php echo esc_attr__( 'Drag action to reorder', 'cea-plugin' ); ?>" title="<?php echo esc_attr__( 'Drag to reorder', 'cea-plugin' ); ?>">
+						<span class="dashicons dashicons-move" aria-hidden="true"></span>
+					</button>
+					<button type="button" class="button-link" data-cea-move="up" aria-label="<?php echo esc_attr__( 'Move action up', 'cea-plugin' ); ?>" title="<?php echo esc_attr__( 'Move up', 'cea-plugin' ); ?>">
+						<span class="dashicons dashicons-arrow-up-alt2" aria-hidden="true"></span>
+					</button>
+					<button type="button" class="button-link" data-cea-move="down" aria-label="<?php echo esc_attr__( 'Move action down', 'cea-plugin' ); ?>" title="<?php echo esc_attr__( 'Move down', 'cea-plugin' ); ?>">
+						<span class="dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span>
+					</button>
+				</span>
 				<strong><?php echo esc_html( $definition['label'] ); ?></strong>
 				<button type="button" class="button-link-delete" data-cea-remove><?php echo esc_html__( 'Remove', 'cea-plugin' ); ?></button>
 			</div>
@@ -426,7 +442,7 @@ final class CEA_Forms_Admin {
 		wp_enqueue_script(
 			'cea-forms-admin',
 			CEA_PLUGIN_URL . 'assets/admin/forms.js',
-			array( 'jquery', 'jquery-ui-sortable' ),
+			array( 'jquery', 'jquery-ui-sortable', 'wp-a11y' ),
 			CEA_PLUGIN_VERSION,
 			true
 		);
@@ -436,6 +452,8 @@ final class CEA_Forms_Admin {
 			array(
 				'removeConfirm' => __( 'Remove this item?', 'cea-plugin' ),
 				'untitled'      => __( 'Untitled field', 'cea-plugin' ),
+				'movedUp'       => __( 'Item moved up.', 'cea-plugin' ),
+				'movedDown'     => __( 'Item moved down.', 'cea-plugin' ),
 			)
 		);
 

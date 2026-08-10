@@ -18,8 +18,24 @@
   flex: 1;
 }
 
+.cea-form-reorder-controls {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
 .cea-form-drag-handle {
-  cursor: move;
+  cursor: grab;
+}
+
+.cea-form-drag-handle:active {
+  cursor: grabbing;
+}
+
+.cea-form-reorder-controls .button-link[disabled] {
+  color: #a7aaad;
+  cursor: not-allowed;
 }
 
 .cea-form-builder-grid {

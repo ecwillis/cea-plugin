@@ -11,6 +11,8 @@ CEA Plugin provides provider-neutral SMTP delivery and a small, schema-driven Wo
 
 Administrators can manage forms under **CEA > Forms**. A form must contain at least one labeled field and one enabled, valid action before it can be published.
 
+To reorder fields or actions, press and hold the four-arrow drag control, move the item vertically, and release it in the new position. The adjacent Move up and Move down buttons provide click and keyboard alternatives. The displayed order is saved with the form.
+
 Supported fields:
 
 - Text
@@ -133,6 +135,7 @@ Run JavaScript syntax checks:
 ```bash
 node --check assets/admin/forms.js
 node --check assets/public/forms.js
+node tests/forms-admin-js-smoke.js
 node tests/forms-js-smoke.js
 ```
 
