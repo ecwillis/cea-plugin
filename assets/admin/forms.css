@@ -1,0 +1,89 @@
+.cea-form-builder-row {
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  margin: 0 0 12px;
+  padding: 12px;
+}
+
+.cea-form-builder-row__header {
+  align-items: center;
+  border-bottom: 1px solid #dcdcde;
+  display: flex;
+  gap: 8px;
+  margin: -4px 0 12px;
+  padding-bottom: 8px;
+}
+
+.cea-form-builder-row__header strong {
+  flex: 1;
+}
+
+.cea-form-reorder-controls {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.cea-form-drag-handle {
+  cursor: grab;
+}
+
+.cea-form-drag-handle:active {
+  cursor: grabbing;
+}
+
+.cea-form-reorder-controls .button-link[disabled] {
+  color: #a7aaad;
+  cursor: not-allowed;
+}
+
+.cea-form-builder-grid {
+  display: grid;
+  gap: 0 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.cea-form-builder-grid p {
+  margin: 0 0 12px;
+}
+
+.cea-form-builder-grid label strong,
+.cea-form-builder-row > p label strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cea-form-builder-grid__full {
+  grid-column: 1 / -1;
+}
+
+.cea-form-builder-placeholder {
+  border: 2px dashed #8c8f94;
+  min-height: 72px;
+  margin-bottom: 12px;
+}
+
+.cea-form-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.column-cea_shortcode {
+  width: 210px;
+}
+
+@media (max-width: 782px) {
+  .cea-form-builder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cea-form-builder-grid__full {
+    grid-column: auto;
+  }
+
+  .column-cea_shortcode {
+    width: auto;
+  }
+}

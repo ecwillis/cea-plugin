@@ -18,6 +18,11 @@ final class CEA_SMTP_Settings_Page {
 	const PAGE_SLUG = 'cea-plugin';
 
 	/**
+	 * CEA submenu slug.
+	 */
+	const SUBMENU_SLUG = 'cea-smtp-settings';
+
+	/**
 	 * User-specific test result transient prefix.
 	 */
 	const TEST_TRANSIENT_PREFIX = 'cea_smtp_test_result_';
@@ -36,7 +41,7 @@ final class CEA_SMTP_Settings_Page {
 	 */
 	public static function register_hooks() {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
-		add_action( 'admin_menu', array( __CLASS__, 'register_page' ) );
+		add_action( 'admin_menu', array( __CLASS__, 'register_page' ), 20 );
 		add_action( 'admin_post_cea_smtp_send_test', array( __CLASS__, 'handle_test_email' ) );
 	}
 
@@ -86,6 +91,15 @@ final class CEA_SMTP_Settings_Page {
 	 * @return void
 	 */
 	public static function register_page() {
+		add_submenu_page(
+			'cea-plugin',
+			__( 'SMTP Settings', 'cea-plugin' ),
+			__( 'SMTP Settings', 'cea-plugin' ),
+			'manage_options',
+			self::SUBMENU_SLUG,
+			array( __CLASS__, 'render_page' )
+		);
+
 		add_options_page(
 			__( 'CEA Plugin', 'cea-plugin' ),
 			__( 'CEA Plugin', 'cea-plugin' ),
@@ -112,7 +126,7 @@ final class CEA_SMTP_Settings_Page {
 		}
 		?>
 		<div class="wrap">
-			<h1><?php echo esc_html__( 'CEA Plugin', 'cea-plugin' ); ?></h1>
+			<h1><?php echo esc_html__( 'CEA SMTP Settings', 'cea-plugin' ); ?></h1>
 
 			<?php settings_errors(); ?>
 
@@ -495,7 +509,7 @@ final class CEA_SMTP_Settings_Page {
 	 * @return void
 	 */
 	private static function redirect_to_page() {
-		wp_safe_redirect( admin_url( 'options-general.php?page=' . self::PAGE_SLUG ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::SUBMENU_SLUG ) );
 		exit;
 	}
 }
