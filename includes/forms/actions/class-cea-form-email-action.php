@@ -63,9 +63,12 @@ final class CEA_Form_Email_Action {
 	 * Validates email action settings.
 	 *
 	 * @param array<string, mixed> $settings Email settings.
+	 * @param array<string, mixed> $context  Optional validation context.
 	 * @return true|WP_Error
 	 */
-	public static function validate_settings( $settings ) {
+	public static function validate_settings( $settings, $context = array() ) {
+		unset( $context );
+
 		$recipients = self::parse_recipients( isset( $settings['to'] ) ? $settings['to'] : '' );
 
 		if ( is_wp_error( $recipients ) ) {
@@ -88,9 +91,12 @@ final class CEA_Form_Email_Action {
 	 *
 	 * @param string               $name     Base field name.
 	 * @param array<string, mixed> $settings Email settings.
+	 * @param array<string, mixed> $context  Optional rendering context.
 	 * @return void
 	 */
-	public static function render_settings( $name, $settings ) {
+	public static function render_settings( $name, $settings, $context = array() ) {
+		unset( $context );
+
 		$settings = wp_parse_args( $settings, self::get_defaults() );
 		?>
 		<p>

@@ -284,7 +284,11 @@ final class CEA_Form_Schema {
 			}
 
 			++$enabled;
-			$result = CEA_Form_Action_Registry::validate_settings( $action['type'], $action['settings'] );
+			$result = CEA_Form_Action_Registry::validate_settings(
+				$action['type'],
+				$action['settings'],
+				array( 'fields' => $fields )
+			);
 
 			if ( is_wp_error( $result ) ) {
 				$definition = CEA_Form_Action_Registry::get( $action['type'] );

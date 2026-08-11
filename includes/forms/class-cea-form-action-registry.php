@@ -39,6 +39,7 @@ final class CEA_Form_Action_Registry {
 		self::$defaults_registered = true;
 		self::register( 'email', CEA_Form_Email_Action::get_definition() );
 		self::register( 'webhook', CEA_Form_Webhook_Action::get_definition() );
+		self::register( 'mailchimp', CEA_Form_Mailchimp_Action::get_definition() );
 
 		/**
 		 * Fires after built-in form actions are registered.
@@ -133,16 +134,17 @@ final class CEA_Form_Action_Registry {
 	 *
 	 * @param string               $type     Action type.
 	 * @param array<string, mixed> $settings Action settings.
+	 * @param array<string, mixed> $context  Optional validation context.
 	 * @return true|WP_Error
 	 */
-	public static function validate_settings( $type, $settings ) {
+	public static function validate_settings( $type, $settings, $context = array() ) {
 		$definition = self::get( $type );
 
 		if ( null === $definition || ! is_callable( $definition['validate_callback'] ) ) {
 			return new WP_Error( 'cea_form_unknown_action', __( 'The selected form action is unavailable.', 'cea-plugin' ) );
 		}
 
-		$result = call_user_func( $definition['validate_callback'], $settings );
+		$result = call_user_func( $definition['validate_callback'], $settings, $context );
 
 		return true === $result || $result instanceof WP_Error
 			? $result
@@ -155,13 +157,14 @@ final class CEA_Form_Action_Registry {
 	 * @param string               $type     Action type.
 	 * @param string               $name     Base input name.
 	 * @param array<string, mixed> $settings Action settings.
+	 * @param array<string, mixed> $context  Optional rendering context.
 	 * @return void
 	 */
-	public static function render_settings( $type, $name, $settings ) {
+	public static function render_settings( $type, $name, $settings, $context = array() ) {
 		$definition = self::get( $type );
 
 		if ( null !== $definition && is_callable( $definition['render_callback'] ) ) {
-			call_user_func( $definition['render_callback'], $name, $settings );
+			call_user_func( $definition['render_callback'], $name, $settings, $context );
 		}
 	}
 }

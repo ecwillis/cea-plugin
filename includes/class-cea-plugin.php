@@ -25,6 +25,7 @@ final class CEA_Plugin {
 		if ( is_admin() ) {
 			CEA_Forms_Admin::register_hooks();
 			CEA_SMTP_Settings_Page::register_hooks();
+			CEA_Mailchimp_Settings_Page::register_hooks();
 		}
 	}
 
@@ -35,6 +36,7 @@ final class CEA_Plugin {
 	 */
 	public static function activate() {
 		CEA_SMTP_Settings::activate();
+		CEA_Mailchimp_Settings::activate();
 		CEA_Forms::register_post_type();
 	}
 }

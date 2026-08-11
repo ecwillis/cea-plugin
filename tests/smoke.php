@@ -29,7 +29,7 @@ cea_smoke_assert( defined( 'CEA_PLUGIN_VERSION' ), 'Plugin bootstrap did not loa
 cea_smoke_assert( post_type_exists( CEA_Forms::POST_TYPE ), 'Form post type is not registered.' );
 
 $actions = CEA_Form_Action_Registry::get_all();
-cea_smoke_assert( isset( $actions['email'], $actions['webhook'] ), 'Built-in actions are not registered.' );
+cea_smoke_assert( isset( $actions['email'], $actions['webhook'], $actions['mailchimp'] ), 'Built-in actions are not registered.' );
 
 $fields = CEA_Form_Schema::sanitize_fields(
 	array(
@@ -99,6 +99,136 @@ cea_smoke_assert(
 	true === CEA_Form_Email_Action::validate_settings( CEA_Form_Email_Action::get_defaults() ),
 	'Default email settings are invalid.'
 );
+
+cea_smoke_assert(
+	'us21' === CEA_Mailchimp_Settings::derive_server_prefix( 'example-key-us21' ),
+	'Mailchimp server-prefix derivation failed.'
+);
+cea_smoke_assert(
+	md5( 'person@example.com' ) === CEA_Mailchimp_Client::get_subscriber_hash( ' Person@Example.com ' ),
+	'Mailchimp subscriber hashing failed.'
+);
+
+$mailchimp_settings = CEA_Form_Mailchimp_Action::sanitize_settings(
+	array(
+		'audience_id'          => 'abc123',
+		'email_field'          => $fields[0]['key'],
+		'consent_field'        => 'consent_field',
+		'status_if_new'        => 'invalid',
+		'first_name_merge_tag' => 'fname',
+		'tags'                 => "Newsletter\nNewsletter\nCustomers",
+	)
+);
+cea_smoke_assert( 'pending' === $mailchimp_settings['status_if_new'], 'Invalid Mailchimp opt-in mode was not normalized.' );
+cea_smoke_assert( 'FNAME' === $mailchimp_settings['first_name_merge_tag'], 'Mailchimp merge tag was not normalized.' );
+cea_smoke_assert( array( 'Newsletter', 'Customers' ) === $mailchimp_settings['tags'], 'Mailchimp tags were not normalized.' );
+
+if ( ! CEA_Mailchimp_Settings::has_external_api_key() && ! CEA_Mailchimp_Settings::has_external_server_prefix() ) {
+	$mailchimp_fields = CEA_Form_Schema::sanitize_fields(
+		array(
+			array(
+				'label' => 'Email',
+				'type'  => 'email',
+			),
+			array(
+				'label' => 'Mailchimp consent',
+				'type'  => 'checkbox',
+			),
+			array(
+				'label' => 'First name',
+				'type'  => 'text',
+			),
+		)
+	);
+	$mailchimp_action_settings = CEA_Form_Mailchimp_Action::sanitize_settings(
+		array(
+			'audience_id'      => 'abc123',
+			'email_field'      => $mailchimp_fields[0]['key'],
+			'consent_field'    => $mailchimp_fields[1]['key'],
+			'first_name_field' => $mailchimp_fields[2]['key'],
+			'status_if_new'    => 'pending',
+			'tags'             => "Newsletter\nCustomer",
+		)
+	);
+	$mailchimp_submission      = array(
+		'form_id' => 0,
+		'fields'  => array(
+			$mailchimp_fields[0]['key'] => array(
+				'type'  => 'email',
+				'value' => 'Person@Example.com',
+			),
+			$mailchimp_fields[1]['key'] => array(
+				'type'  => 'checkbox',
+				'value' => '',
+			),
+			$mailchimp_fields[2]['key'] => array(
+				'type'  => 'text',
+				'value' => 'Ada',
+			),
+		),
+	);
+	$mailchimp_requests        = array();
+	$mailchimp_api_key_filter  = static function () {
+		return 'smoke-api-key-us1';
+	};
+	$mailchimp_settings_filter = static function () {
+		return array( 'server_prefix' => 'us1' );
+	};
+	$mailchimp_http_filter     = static function ( $preempt, $args, $url ) use ( &$mailchimp_requests ) {
+		unset( $preempt );
+		$mailchimp_requests[] = array(
+			'args' => $args,
+			'url'  => $url,
+		);
+
+		return array(
+			'headers'  => array(),
+			'body'     => false !== strpos( $url, '/tags' ) ? '' : '{"id":"member"}',
+			'response' => array(
+				'code'    => false !== strpos( $url, '/tags' ) ? 204 : 200,
+				'message' => 'OK',
+			),
+			'cookies'  => array(),
+			'filename' => null,
+		);
+	};
+
+	add_filter( 'pre_option_' . CEA_Mailchimp_Settings::API_KEY_OPTION_NAME, $mailchimp_api_key_filter );
+	add_filter( 'pre_option_' . CEA_Mailchimp_Settings::OPTION_NAME, $mailchimp_settings_filter );
+	add_filter( 'pre_http_request', $mailchimp_http_filter, 10, 3 );
+
+	cea_smoke_assert(
+		true === CEA_Form_Mailchimp_Action::execute( $mailchimp_submission, $mailchimp_action_settings ),
+		'An unchecked Mailchimp consent field should skip successfully.'
+	);
+	cea_smoke_assert( empty( $mailchimp_requests ), 'Mailchimp was called without consent.' );
+
+	$mailchimp_submission['fields'][ $mailchimp_fields[1]['key'] ]['value'] = '1';
+	cea_smoke_assert(
+		true === CEA_Form_Mailchimp_Action::execute( $mailchimp_submission, $mailchimp_action_settings ),
+		'Mailchimp action execution failed.'
+	);
+	cea_smoke_assert( 2 === count( $mailchimp_requests ), 'Mailchimp member and tag requests were not both sent.' );
+	cea_smoke_assert( 'PUT' === $mailchimp_requests[0]['args']['method'], 'Mailchimp member request did not use PUT.' );
+	cea_smoke_assert(
+		false !== strpos( $mailchimp_requests[0]['url'], md5( 'person@example.com' ) ),
+		'Mailchimp member request did not use the normalized subscriber hash.'
+	);
+
+	$mailchimp_member_payload = json_decode( $mailchimp_requests[0]['args']['body'], true );
+	cea_smoke_assert( 'pending' === $mailchimp_member_payload['status_if_new'], 'Mailchimp opt-in mode was not sent.' );
+	cea_smoke_assert( ! isset( $mailchimp_member_payload['status'] ), 'Mailchimp action attempted to change an existing contact status.' );
+	cea_smoke_assert( 'Ada' === $mailchimp_member_payload['merge_fields']['FNAME'], 'Mailchimp merge field was not mapped.' );
+
+	$mailchimp_tag_payload = json_decode( $mailchimp_requests[1]['args']['body'], true );
+	cea_smoke_assert( 'POST' === $mailchimp_requests[1]['args']['method'], 'Mailchimp tag request did not use POST.' );
+	cea_smoke_assert( 'Newsletter' === $mailchimp_tag_payload['tags'][0]['name'], 'Mailchimp tags were not sent.' );
+	cea_smoke_assert( 'active' === $mailchimp_tag_payload['tags'][0]['status'], 'Mailchimp tag was not activated.' );
+
+	remove_filter( 'pre_option_' . CEA_Mailchimp_Settings::API_KEY_OPTION_NAME, $mailchimp_api_key_filter );
+	remove_filter( 'pre_option_' . CEA_Mailchimp_Settings::OPTION_NAME, $mailchimp_settings_filter );
+	remove_filter( 'pre_http_request', $mailchimp_http_filter, 10 );
+}
 
 $hostile_fields = CEA_Form_Schema::sanitize_fields(
 	array(

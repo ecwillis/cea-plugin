@@ -242,11 +242,12 @@ final class CEA_Forms_Admin {
 		$has_saved_actions = metadata_exists( 'post', $post->ID, CEA_Forms::META_ACTIONS );
 		$actions           = $has_saved_actions ? CEA_Forms::get_actions( $post->ID ) : array( CEA_Form_Schema::get_default_action() );
 		$definitions       = CEA_Form_Action_Registry::get_all();
+		$fields            = CEA_Forms::get_fields( $post->ID );
 		?>
 		<p><?php echo esc_html__( 'Enabled actions run independently after a valid submission. Reorder them by dragging the four-arrow control or using the Move up and Move down buttons.', 'cea-plugin' ); ?></p>
 		<div class="cea-form-sortable" id="cea-form-actions-list" data-cea-list="actions">
 			<?php foreach ( $actions as $index => $action ) : ?>
-				<?php self::render_action_row( (string) $index, $action ); ?>
+				<?php self::render_action_row( (string) $index, $action, $fields ); ?>
 			<?php endforeach; ?>
 		</div>
 		<p class="cea-form-action-buttons">
@@ -274,7 +275,8 @@ final class CEA_Forms_Admin {
 						'type'     => $type,
 						'enabled'  => true,
 						'settings' => array(),
-					)
+					),
+					$fields
 				);
 				?>
 			</script>
@@ -285,11 +287,12 @@ final class CEA_Forms_Admin {
 	/**
 	 * Renders one action row.
 	 *
-	 * @param string               $index  Action index.
-	 * @param array<string, mixed> $action Action configuration.
+	 * @param string                           $index  Action index.
+	 * @param array<string, mixed>             $action Action configuration.
+	 * @param array<int, array<string, mixed>> $fields Current form fields.
 	 * @return void
 	 */
-	private static function render_action_row( $index, $action ) {
+	private static function render_action_row( $index, $action, $fields = array() ) {
 		$type       = isset( $action['type'] ) ? sanitize_key( $action['type'] ) : '';
 		$definition = CEA_Form_Action_Registry::get( $type );
 
@@ -324,7 +327,7 @@ final class CEA_Forms_Admin {
 					<?php echo esc_html__( 'Enabled', 'cea-plugin' ); ?>
 				</label>
 			</p>
-			<?php CEA_Form_Action_Registry::render_settings( $type, $name . '[settings]', $settings ); ?>
+			<?php CEA_Form_Action_Registry::render_settings( $type, $name . '[settings]', $settings, array( 'fields' => $fields ) ); ?>
 		</div>
 		<?php
 	}

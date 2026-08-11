@@ -58,9 +58,12 @@ final class CEA_Form_Webhook_Action {
 	 * Validates webhook action settings.
 	 *
 	 * @param array<string, mixed> $settings Webhook settings.
+	 * @param array<string, mixed> $context  Optional validation context.
 	 * @return true|WP_Error
 	 */
-	public static function validate_settings( $settings ) {
+	public static function validate_settings( $settings, $context = array() ) {
+		unset( $context );
+
 		$url = isset( $settings['url'] ) ? $settings['url'] : '';
 
 		if ( empty( $url ) || ! wp_http_validate_url( $url ) ) {
@@ -82,9 +85,12 @@ final class CEA_Form_Webhook_Action {
 	 *
 	 * @param string               $name     Base field name.
 	 * @param array<string, mixed> $settings Webhook settings.
+	 * @param array<string, mixed> $context  Optional rendering context.
 	 * @return void
 	 */
-	public static function render_settings( $name, $settings ) {
+	public static function render_settings( $name, $settings, $context = array() ) {
+		unset( $context );
+
 		$url        = isset( $settings['url'] ) ? $settings['url'] : '';
 		$has_secret = ! empty( $settings['secret'] );
 		?>

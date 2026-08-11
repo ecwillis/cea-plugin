@@ -67,6 +67,30 @@ X-CEA-Signature: sha256=<HMAC-SHA256 of the raw JSON body>
 
 The saved secret is never redisplayed in the form builder.
 
+#### Mailchimp
+
+Mailchimp actions add or update a consenting visitor in a Mailchimp Marketing audience. Configure the site-level connection under **CEA > Mailchimp**, test it to cache the account's audiences, and then add a Mailchimp action to a form.
+
+Each action requires:
+
+- An audience ID
+- A mapped Email field
+- A mapped Checkbox field for consent
+- A new-contact opt-in mode
+
+New contacts use double opt-in (`pending`) by default. Immediate subscription (`subscribed`) is available for consent processes that permit it. The action sends `status_if_new` and intentionally does not change an existing contact's subscription status, so an unsubscribed or cleaned contact is not silently resubscribed.
+
+First name, last name, and static Mailchimp tags are optional. The default name merge tags are `FNAME` and `LNAME`, and can be changed per action to match the selected audience. If the visitor does not check the mapped consent field, Mailchimp is skipped while the form's other actions continue.
+
+The Marketing API key is stored separately from SMTP or Mailchimp Transactional credentials and is never redisplayed. It can instead be supplied in `wp-config.php`:
+
+```php
+define( 'CEA_MAILCHIMP_MARKETING_API_KEY', 'your-api-key-us21' );
+define( 'CEA_MAILCHIMP_SERVER_PREFIX', 'us21' ); // Optional when the key suffix is present.
+```
+
+The audience cache refreshes when the administrator tests the connection. A manual audience ID can be entered when cached choices are unavailable.
+
 If every enabled action fails, the visitor receives a generic retry message and the idempotency token is released. Recent failure summaries appear to administrators when the form is next edited; submission values and secrets are excluded from those summaries.
 
 ## Confirmation behavior
@@ -87,9 +111,11 @@ Public submissions include:
 - Schema-based input allowlisting
 - Type-specific sanitization and validation
 
-Only published forms accept submissions. Unexpected fields are discarded. Email recipients and headers are validated, webhook requests use `wp_safe_remote_post()`, and only same-site confirmation redirects are accepted.
+Only published forms accept submissions. Unexpected fields are discarded. Email recipients and headers are validated, webhook requests use `wp_safe_remote_post()`, Mailchimp requests use `wp_safe_remote_request()` against a validated Mailchimp data-center host, and only same-site confirmation redirects are accepted.
 
-Submission entries are not stored. Short-lived transients may temporarily contain sanitized values after a validation error and are deleted when consumed or expire after five minutes. WordPress options retain SMTP settings and form definitions remain as private posts if the plugin is deactivated or removed; no destructive uninstall routine runs automatically.
+Mailchimp requests include only the mapped email, optional mapped name values, and configured tags. API errors stored for administrators exclude request bodies, credentials, and subscriber email addresses.
+
+Submission entries are not stored. Short-lived transients may temporarily contain sanitized values after a validation error and are deleted when consumed or expire after five minutes. WordPress options retain SMTP and Mailchimp settings, and form definitions remain as private posts if the plugin is deactivated or removed; no destructive uninstall routine runs automatically.
 
 Public-page caches must not retain form markup beyond the WordPress nonce lifetime. Test nonce behavior whenever full-page caching is enabled.
 
@@ -144,3 +170,11 @@ Run the non-mutating WordPress smoke tests with the plugin active:
 ```bash
 wp eval-file wp-content/plugins/cea-plugin/tests/smoke.php --path=/path/to/wordpress
 ```
+
+## Changelog
+
+### 0.4.0
+
+- Added a site-level Mailchimp Marketing API connection and audience refresh.
+- Added a consent-aware Mailchimp form action with double opt-in, name mappings, and tags.
+- Extended action rendering and validation with current form-field context.
