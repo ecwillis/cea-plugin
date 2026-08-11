@@ -1,6 +1,6 @@
 # CEA Plugin
 
-CEA Plugin provides provider-neutral SMTP delivery and a small, schema-driven WordPress form builder.
+CEA Plugin provides provider-neutral SMTP delivery, a schema-driven WordPress form builder, and private response storage.
 
 ## Requirements
 
@@ -91,7 +91,20 @@ define( 'CEA_MAILCHIMP_SERVER_PREFIX', 'us21' ); // Optional when the key suffix
 
 The audience cache refreshes when the administrator tests the connection. A manual audience ID can be entered when cached choices are unavailable.
 
-If every enabled action fails, the visitor receives a generic retry message and the idempotency token is released. Recent failure summaries appear to administrators when the form is next edited; submission values and secrets are excluded from those summaries.
+If every enabled action fails, the visitor receives a generic retry message and the response remains stored with a failed status. A deliberate retry after the post/redirect/get cycle receives a new token and creates a separate delivery attempt. Recent failure summaries also appear when the form is next edited; submission values and secrets are excluded from those summaries.
+
+## Stored responses
+
+Every valid response is saved to the WordPress database before Email, Webhook, Mailchimp, or custom actions run. Invalid, expired, rate-limited, and honeypot submissions are not stored. The saved snapshot contains the form ID and title, submission time, normalized field keys, labels, types and values, plus safe delivery outcomes. It does not contain action settings or credentials.
+
+Administrators with the configured submissions capability can review responses under **CEA > Submissions** or follow **View responses** from the Forms list. Responses can be filtered by form, delivery status, review state, or date; marked reviewed; and permanently deleted. Delivery states mean:
+
+- `processing`: the response was saved but final action outcomes have not been recorded.
+- `completed`: every enabled action completed.
+- `partial_failure`: at least one action completed and at least one failed.
+- `failed`: every enabled action failed.
+
+Responses are retained for 90 days by default. The Submissions screen can change retention to 30, 90, 180, or 365 days, retain responses until manual deletion, and run a protected bounded purge. Daily cleanup removes at most 500 expired responses per run. Deactivation unschedules cleanup without deleting responses.
 
 ## Confirmation behavior
 
@@ -107,7 +120,7 @@ Public submissions include:
 - A honeypot field
 - A minimum-fill-time check
 - A per-form/client rate limit
-- A browser-generated idempotency token
+- A server-rendered idempotency token with a browser fallback
 - Schema-based input allowlisting
 - Type-specific sanitization and validation
 
@@ -115,7 +128,7 @@ Only published forms accept submissions. Unexpected fields are discarded. Email 
 
 Mailchimp requests include only the mapped email, optional mapped name values, and configured tags. API errors stored for administrators exclude request bodies, credentials, and subscriber email addresses.
 
-Submission entries are not stored. Short-lived transients may temporarily contain sanitized values after a validation error and are deleted when consumed or expire after five minutes. WordPress options retain SMTP and Mailchimp settings, and form definitions remain as private posts if the plugin is deactivated or removed; no destructive uninstall routine runs automatically.
+Validated submission entries are stored in the plugin's private submissions table. The plugin does not store visitor IP addresses, browser user agents, referrers, nonces, or honeypot values with responses. Short-lived transients may temporarily contain sanitized values after a validation error and are deleted when consumed or expire after five minutes. WordPress personal-data export and erasure tools include or delete responses matched through normalized Email fields. Deactivation and uninstall do not automatically delete stored responses.
 
 Public-page caches must not retain form markup beyond the WordPress nonce lifetime. Test nonce behavior whenever full-page caching is enabled.
 
@@ -138,6 +151,14 @@ Rendering and validation:
 - `cea_form_field_types`
 - `cea_form_sanitized_field_value`
 - `cea_form_validated_submission`
+
+Submission storage:
+
+- `cea_form_submission_stored`
+- `cea_form_submission_storage_failed`
+- `cea_form_submission_updated`
+- `cea_form_submission_deleted`
+- `cea_form_submission_capability`
 
 Limits and transport:
 
@@ -171,7 +192,20 @@ Run the non-mutating WordPress smoke tests with the plugin active:
 wp eval-file wp-content/plugins/cea-plugin/tests/smoke.php --path=/path/to/wordpress
 ```
 
+Run the database integration tests. Test responses are permanently deleted in a cleanup block:
+
+```bash
+wp eval-file wp-content/plugins/cea-plugin/tests/submissions-integration.php --path=/path/to/wordpress
+```
+
 ## Changelog
+
+### 0.5.0
+
+- Added durable storage for validated form responses before delivery actions run.
+- Added delivery outcome tracking and database-backed duplicate protection.
+- Added private response review, filtering, retention, and permanent-deletion controls under CEA > Submissions.
+- Added WordPress personal-data export, erasure, and suggested privacy-policy integration.
 
 ### 0.4.0
 

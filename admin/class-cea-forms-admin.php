@@ -540,6 +540,7 @@ final class CEA_Forms_Admin {
 			$result[ $key ] = $label;
 
 			if ( 'title' === $key ) {
+				$result['cea_submissions'] = __( 'Submissions', 'cea-plugin' );
 				$result['cea_shortcode'] = __( 'Shortcode', 'cea-plugin' );
 			}
 		}
@@ -555,6 +556,19 @@ final class CEA_Forms_Admin {
 	 * @return void
 	 */
 	public static function render_column( $column, $post_id ) {
+		if ( 'cea_submissions' === $column ) {
+			$url = add_query_arg(
+				array(
+					'page'    => CEA_Form_Submissions_Admin::PAGE_SLUG,
+					'form_id' => absint( $post_id ),
+				),
+				admin_url( 'admin.php' )
+			);
+
+			echo '<a href="' . esc_url( $url ) . '">' . esc_html__( 'View responses', 'cea-plugin' ) . '</a>';
+			return;
+		}
+
 		if ( 'cea_shortcode' === $column ) {
 			echo '<code>[cea_form id=&quot;' . esc_html( absint( $post_id ) ) . '&quot;]</code>';
 		}

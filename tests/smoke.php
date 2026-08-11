@@ -27,6 +27,18 @@ function cea_smoke_assert( $condition, $message ) {
 
 cea_smoke_assert( defined( 'CEA_PLUGIN_VERSION' ), 'Plugin bootstrap did not load.' );
 cea_smoke_assert( post_type_exists( CEA_Forms::POST_TYPE ), 'Form post type is not registered.' );
+cea_smoke_assert( class_exists( 'CEA_Form_Submission_Repository' ), 'Submission repository did not load.' );
+cea_smoke_assert( class_exists( 'CEA_Form_Submission_Settings' ), 'Submission retention settings did not load.' );
+cea_smoke_assert( class_exists( 'CEA_Form_Submission_Privacy' ), 'Submission privacy integration did not load.' );
+cea_smoke_assert( CEA_Form_Submission_Repository::table_exists(), 'Submission table is missing.' );
+cea_smoke_assert( CEA_Form_Submission_Repository::is_valid_token( '12345678-1234-1234-1234-123456789abc' ), 'Valid submission token was rejected.' );
+cea_smoke_assert( ! CEA_Form_Submission_Repository::is_valid_token( 'too-short' ), 'Invalid submission token was accepted.' );
+cea_smoke_assert( in_array( CEA_Form_Submission_Settings::get_settings()['retention_days'], CEA_Form_Submission_Settings::get_allowed_retention_days(), true ), 'Submission retention setting is invalid.' );
+
+$privacy_exporters = CEA_Form_Submission_Privacy::register_exporter( array() );
+$privacy_erasers   = CEA_Form_Submission_Privacy::register_eraser( array() );
+cea_smoke_assert( is_callable( $privacy_exporters['cea-form-submissions']['callback'] ), 'Submission privacy exporter is not callable.' );
+cea_smoke_assert( is_callable( $privacy_erasers['cea-form-submissions']['callback'] ), 'Submission privacy eraser is not callable.' );
 
 $actions = CEA_Form_Action_Registry::get_all();
 cea_smoke_assert( isset( $actions['email'], $actions['webhook'], $actions['mailchimp'] ), 'Built-in actions are not registered.' );
