@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const listeners = {};
 const startedAt = { value: '1000' };
-const token = { value: '' };
+const token = { value: 'server-rendered-token' };
 
 const form = {
   matches(selector) {
@@ -62,7 +62,7 @@ vm.runInNewContext(source, context);
 listeners.DOMContentLoaded();
 
 assert.strictEqual(startedAt.value, '1000', 'Page initialization must preserve the server-rendered start time.');
-assert.strictEqual(token.value, 'fixed-submission-token', 'Page initialization must add an idempotency token.');
+assert.strictEqual(token.value, 'server-rendered-token', 'Page initialization must preserve the server-rendered idempotency token.');
 
 listeners.submit({ target: form });
 

@@ -18,11 +18,6 @@ final class CEA_Form_Submission_Handler {
 	const RESULT_TRANSIENT_PREFIX = 'cea_form_result_';
 
 	/**
-	 * Processed submission transient prefix.
-	 */
-	const PROCESSED_TRANSIENT_PREFIX = 'cea_form_processed_';
-
-	/**
 	 * Rate-limit transient prefix.
 	 */
 	const RATE_TRANSIENT_PREFIX = 'cea_form_rate_';
@@ -100,10 +95,6 @@ final class CEA_Form_Submission_Handler {
 			? sanitize_text_field( wp_unslash( $_POST['cea_form_submission_token'] ) )
 			: '';
 
-		if ( self::was_processed( $token ) ) {
-			self::redirect_success( $form_id, $settings );
-		}
-
 		$submission = self::build_submission( $form, $fields, $validation['values'] );
 
 		/**
@@ -123,8 +114,50 @@ final class CEA_Form_Submission_Handler {
 			);
 		}
 
-		self::mark_processed( $token );
+		$stored = CEA_Form_Submission_Repository::create( $submission, $token );
+
+		if ( is_wp_error( $stored ) ) {
+			/**
+			 * Fires when a validated submission cannot be stored.
+			 *
+			 * Submitted field values are intentionally omitted.
+			 *
+			 * @param int      $form_id Form ID.
+			 * @param WP_Error $error   Storage error.
+			 * @param string   $phase   Storage phase.
+			 */
+			do_action( 'cea_form_submission_storage_failed', $form_id, $stored, 'create' );
+
+			self::redirect_error(
+				$form_id,
+				__( 'Your submission could not be safely recorded. Please try again.', 'cea-plugin' ),
+				array(),
+				$validation['values']
+			);
+		}
+
+		if ( empty( $stored['created'] ) ) {
+			if ( 'failed' === $stored['status'] ) {
+				self::redirect_error(
+					$form_id,
+					__( 'Your submission could not be delivered. Please try again.', 'cea-plugin' ),
+					array(),
+					$validation['values']
+				);
+			}
+
+			self::redirect_success( $form_id, $settings );
+		}
+
+		$submission['submission_id'] = absint( $stored['id'] );
 		$action_errors = CEA_Form_Action_Dispatcher::dispatch( $actions, $submission );
+		$storage_update = CEA_Form_Submission_Repository::update_action_results( $stored['id'], $actions, $action_errors );
+
+		if ( is_wp_error( $storage_update ) ) {
+			/** This hook is documented above for the create phase. */
+			do_action( 'cea_form_submission_storage_failed', $form_id, $storage_update, 'update' );
+		}
+
 		$enabled_count = count(
 			array_filter(
 				$actions,
@@ -135,7 +168,6 @@ final class CEA_Form_Submission_Handler {
 		);
 
 		if ( 0 < $enabled_count && count( $action_errors ) >= $enabled_count ) {
-			self::unmark_processed( $token );
 			self::redirect_error(
 				$form_id,
 				__( 'Your submission could not be delivered. Please try again.', 'cea-plugin' ),
@@ -264,10 +296,11 @@ final class CEA_Form_Submission_Handler {
 		}
 
 		return array(
-			'form_id'      => absint( $form->ID ),
-			'form_title'   => wp_strip_all_tags( get_the_title( $form ) ),
-			'submitted_at' => current_time( 'mysql' ),
-			'fields'       => $submitted_fields,
+			'form_id'          => absint( $form->ID ),
+			'form_title'       => wp_strip_all_tags( get_the_title( $form ) ),
+			'submitted_at'     => current_time( 'mysql' ),
+			'submitted_at_gmt' => current_time( 'mysql', true ),
+			'fields'           => $submitted_fields,
 		);
 	}
 
@@ -290,44 +323,6 @@ final class CEA_Form_Submission_Handler {
 		set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
 
 		return false;
-	}
-
-	/**
-	 * Returns whether a browser-generated idempotency token was processed.
-	 *
-	 * @param string $token Submission token.
-	 * @return bool
-	 */
-	private static function was_processed( $token ) {
-		if ( ! is_string( $token ) || 1 !== preg_match( '/^[a-zA-Z0-9-]{16,80}$/', $token ) ) {
-			return false;
-		}
-
-		return false !== get_transient( self::PROCESSED_TRANSIENT_PREFIX . md5( $token ) );
-	}
-
-	/**
-	 * Marks a browser-generated idempotency token as processed.
-	 *
-	 * @param string $token Submission token.
-	 * @return void
-	 */
-	private static function mark_processed( $token ) {
-		if ( is_string( $token ) && 1 === preg_match( '/^[a-zA-Z0-9-]{16,80}$/', $token ) ) {
-			set_transient( self::PROCESSED_TRANSIENT_PREFIX . md5( $token ), 1, 10 * MINUTE_IN_SECONDS );
-		}
-	}
-
-	/**
-	 * Clears a processed token when every configured action failed.
-	 *
-	 * @param string $token Submission token.
-	 * @return void
-	 */
-	private static function unmark_processed( $token ) {
-		if ( is_string( $token ) && 1 === preg_match( '/^[a-zA-Z0-9-]{16,80}$/', $token ) ) {
-			delete_transient( self::PROCESSED_TRANSIENT_PREFIX . md5( $token ) );
-		}
 	}
 
 	/**

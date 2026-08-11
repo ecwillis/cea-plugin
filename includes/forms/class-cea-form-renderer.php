@@ -65,7 +65,7 @@ final class CEA_Form_Renderer {
 				<input type="hidden" name="action" value="cea_form_submit">
 				<input type="hidden" name="cea_form_id" value="<?php echo esc_attr( $form->ID ); ?>">
 				<input type="hidden" name="cea_form_started_at" value="<?php echo esc_attr( time() ); ?>" data-cea-started-at>
-				<input type="hidden" name="cea_form_submission_token" value="" data-cea-submission-token>
+				<input type="hidden" name="cea_form_submission_token" value="<?php echo esc_attr( wp_generate_uuid4() ); ?>" data-cea-submission-token>
 				<?php wp_nonce_field( 'cea_form_submit_' . $form->ID, 'cea_form_nonce' ); ?>
 
 				<div class="cea-form__honeypot" aria-hidden="true">

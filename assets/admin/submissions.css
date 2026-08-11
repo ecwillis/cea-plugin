@@ -1,0 +1,87 @@
+.cea-submissions-filters {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.cea-submissions-filters label span:not(.screen-reader-text) {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cea-submission-status {
+  border-radius: 999px;
+  display: inline-block;
+  font-weight: 600;
+  padding: 3px 9px;
+}
+
+.cea-submission-status--processing {
+  background: #f0f0f1;
+  color: #2c3338;
+}
+
+.cea-submission-status--completed {
+  background: #d7f0dd;
+  color: #005c12;
+}
+
+.cea-submission-status--partial_failure {
+  background: #fcf0c4;
+  color: #674800;
+}
+
+.cea-submission-status--failed {
+  background: #f4cccc;
+  color: #8a2424;
+}
+
+.cea-submission-summary {
+  align-items: start;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+  margin: 16px 0 24px;
+  padding: 16px;
+}
+
+.cea-submission-summary h2 {
+  margin-top: 0;
+}
+
+.cea-submission-values th {
+  width: 30%;
+}
+
+.cea-submission-values td {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.cea-submission-danger-zone {
+  border-top: 1px solid #dcdcde;
+  margin-top: 32px;
+  padding-top: 16px;
+}
+
+.cea-submission-danger-zone form,
+.cea-submissions-delete-confirmation {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 782px) {
+  .cea-submission-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .cea-submission-values th {
+    width: auto;
+  }
+}
