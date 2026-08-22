@@ -302,7 +302,21 @@ Extend the existing verification section in `README.md`:
    the existing `tests/forms-js-smoke.js` / `forms-admin-js-smoke.js` all
    pass with these changes in place.
 
-2. `CEA_Form_Picker` + REST controller.
+2. ✅ **Done** — `CEA_Form_Picker::get_choices()` (published forms only,
+   `{id, title}`) and the `GET /cea/v1/forms` REST controller, gated on
+   `edit_posts`. Both wired into `CEA_Blocks::register_hooks()`.
+   Verified against this site's live WordPress + wp-cli install (not just
+   `php -l`): a real editor-role user (`edit_posts`, no `manage_options`)
+   gets `200` and only sees a published fixture form, a subscriber and a
+   logged-out request both get `401`/`403`, and a draft form never appears
+   in the picker's output. Landed as two permanent, repeatable test files
+   following the plugin's existing two-tier convention —
+   `tests/blocks-smoke.php` (non-mutating: registration checks) and
+   `tests/blocks-integration.php` (mutating, self-cleaning: creates and
+   then deletes fixture forms/users to exercise the capability boundary
+   and publish-status filter) — both added to the README's Verification
+   section. All manual test fixtures (forms, users) created during
+   verification were deleted afterward; the live site was left clean.
 3. `CEA_Block_Base` / `CEA_Block_Registry` skeleton.
 4. Gutenberg `CEA_Form_Block`: real `render_callback`, `edit.js` with
    `SelectControl` + `ServerSideRender`.

@@ -23,6 +23,7 @@ final class CEA_Blocks {
 	 */
 	public static function register_hooks() {
 		add_action( 'init', array( __CLASS__, 'register_blocks' ) );
+		CEA_Rest_Form_Picker_Controller::register_hooks();
 	}
 
 	/**

@@ -214,6 +214,18 @@ Run the database integration tests. Test responses are permanently deleted in a 
 wp eval-file wp-content/plugins/cea-plugin/tests/submissions-integration.php --path=/path/to/wordpress
 ```
 
+Run the non-mutating theme blocks smoke tests (requires `npm run build` first, since it asserts `cea/form` is registered):
+
+```bash
+wp eval-file wp-content/plugins/cea-plugin/tests/blocks-smoke.php --path=/path/to/wordpress
+```
+
+Run the theme blocks integration tests. Test forms and test users are permanently deleted in a cleanup block:
+
+```bash
+wp eval-file wp-content/plugins/cea-plugin/tests/blocks-integration.php --path=/path/to/wordpress
+```
+
 ## Changelog
 
 ### 0.5.0
