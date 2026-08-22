@@ -36,6 +36,7 @@ require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-rest-form-picker-contro
 require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-block-base.php';
 require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-block-registry.php';
 require_once CEA_PLUGIN_DIR . 'includes/blocks/form/class-cea-form-block.php';
+require_once CEA_PLUGIN_DIR . 'includes/integrations/class-cea-elementor-integration.php';
 require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-blocks.php';
 require_once CEA_PLUGIN_DIR . 'admin/class-cea-smtp-settings-page.php';
 require_once CEA_PLUGIN_DIR . 'admin/class-cea-mailchimp-settings-page.php';

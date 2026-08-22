@@ -53,13 +53,23 @@ cea_blocks_smoke_assert(
 );
 
 // Elementor is a soft dependency: nothing here should assume it's active,
-// but if it is, its widget should register once that phase exists.
+// but if it is, the widget and its category should actually register.
 // See docs/BLOCKS-PLAN.md, section 7.
 if ( did_action( 'elementor/loaded' ) ) {
 	cea_blocks_smoke_assert(
 		class_exists( 'CEA_Elementor_Integration' ),
 		'Elementor is active but the CEA Elementor integration did not load.'
 	);
+
+	// get_widget_types() is what actually triggers Elementor's own
+	// elementor/widgets/register action (Elementor lazily builds its
+	// widget list on first access, not on a fixed WordPress hook).
+	$widget_types = \Elementor\Plugin::$instance->widgets_manager->get_widget_types();
+	cea_blocks_smoke_assert( isset( $widget_types['cea_form'] ), 'The cea_form Elementor widget did not register.' );
+	cea_blocks_smoke_assert( 'CEA_Form_Elementor_Widget' === get_class( $widget_types['cea_form'] ), 'The cea_form Elementor widget registered the wrong class.' );
+
+	$categories = \Elementor\Plugin::$instance->elements_manager->get_categories();
+	cea_blocks_smoke_assert( isset( $categories['cea'] ), 'The "cea" Elementor widget category is not registered.' );
 }
 
 // --- CEA_Block_Registry mechanics ---------------------------------------

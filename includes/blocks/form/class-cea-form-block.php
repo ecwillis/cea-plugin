@@ -47,6 +47,26 @@ final class CEA_Form_Block extends CEA_Block_Base {
 	}
 
 	/**
+	 * Returns the Elementor widget class for this block type, lazily
+	 * loading its file first.
+	 *
+	 * Only ever called from CEA_Block_Registry::init_elementor(), itself
+	 * only ever invoked from Elementor's own `elementor/widgets/register`
+	 * hook — so \Elementor\Widget_Base (the widget class's parent) is
+	 * guaranteed to already exist by the time this require runs. This
+	 * lazy require, rather than an unconditional one in cea-plugin.php,
+	 * is what keeps Elementor a soft dependency — see
+	 * docs/BLOCKS-PLAN.md, section 7.
+	 *
+	 * @return string
+	 */
+	public function elementor_widget_class() {
+		require_once __DIR__ . '/class-cea-form-elementor-widget.php';
+
+		return CEA_Form_Elementor_Widget::class;
+	}
+
+	/**
 	 * Renders the block's front-end markup.
 	 *
 	 * Normalizes its own input, so it's safe to call directly (as the

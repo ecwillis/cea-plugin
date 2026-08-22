@@ -206,6 +206,62 @@ try {
 	$category_slugs = wp_list_pluck( $categories, 'slug' );
 	cea_blocks_integration_assert( in_array( 'cea', $category_slugs, true ), 'The "cea" block category is not registered.' );
 
+	// --- Elementor widget (soft dependency: only if Elementor is active) --
+	//
+	// Reuses the same $draft_id / $renderable_id / $editor_id fixtures as
+	// the Gutenberg checks above — one fixture set, both builders — see
+	// docs/BLOCKS-PLAN.md, section 1.
+	if ( did_action( 'elementor/loaded' ) ) {
+		// get_widget_types() is what actually triggers Elementor's own
+		// elementor/widgets/register action (lazily, on first access).
+		$widget_types = \Elementor\Plugin::$instance->widgets_manager->get_widget_types();
+		cea_blocks_integration_assert( isset( $widget_types['cea_form'] ), 'The cea_form Elementor widget did not register.' );
+
+		$elementor_categories = \Elementor\Plugin::$instance->elements_manager->get_categories();
+		cea_blocks_integration_assert( isset( $elementor_categories['cea'] ), 'The "cea" Elementor widget category is not registered.' );
+
+		// Instantiates through Elementor's own create_element_instance(),
+		// the same path a real Elementor-built page uses, rather than
+		// constructing CEA_Form_Elementor_Widget directly.
+		$render_elementor_widget = static function ( $form_id ) {
+			$instance = \Elementor\Plugin::$instance->elements_manager->create_element_instance(
+				array(
+					'id'         => 'cea' . substr( md5( wp_generate_password( 8, false, false ) ), 0, 6 ),
+					'elType'     => 'widget',
+					'widgetType' => 'cea_form',
+					'settings'   => array( 'form_id' => $form_id ),
+				)
+			);
+			cea_blocks_integration_assert( null !== $instance, 'Elementor could not instantiate the cea_form widget.' );
+
+			ob_start();
+			$instance->render_content();
+			return ob_get_clean();
+		};
+
+		wp_set_current_user( absint( $editor_id ) );
+		cea_blocks_integration_assert(
+			false !== strpos( $render_elementor_widget( 0 ), 'Select a form' ),
+			'The Elementor widget did not show a "select a form" placeholder for an editor.'
+		);
+		cea_blocks_integration_assert(
+			false !== strpos( $render_elementor_widget( $draft_id ), 'not published' ),
+			'The Elementor widget did not show a "not published" placeholder for a draft form.'
+		);
+		cea_blocks_integration_assert(
+			false !== strpos( $render_elementor_widget( $renderable_id ), 'cea-form' ),
+			'The Elementor widget did not render a renderable form for an editor.'
+		);
+
+		wp_set_current_user( 0 );
+		cea_blocks_integration_assert( '' === $render_elementor_widget( 0 ), 'An anonymous visitor saw Elementor widget placeholder text for formId 0.' );
+		cea_blocks_integration_assert( '' === $render_elementor_widget( $draft_id ), 'An anonymous visitor saw Elementor widget placeholder text for a draft form.' );
+		cea_blocks_integration_assert(
+			false !== strpos( $render_elementor_widget( $renderable_id ), 'cea-form' ),
+			'A renderable form did not render via the Elementor widget for an anonymous visitor.'
+		);
+	}
+
 	WP_CLI::success( 'CEA theme blocks integration tests passed.' );
 } finally {
 	wp_set_current_user( $previous_user );

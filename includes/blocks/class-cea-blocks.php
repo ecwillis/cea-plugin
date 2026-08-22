@@ -21,6 +21,7 @@ final class CEA_Blocks {
 		add_action( 'init', array( __CLASS__, 'register_blocks' ) );
 		add_filter( 'block_categories_all', array( __CLASS__, 'register_block_category' ) );
 		CEA_Rest_Form_Picker_Controller::register_hooks();
+		CEA_Elementor_Integration::register_hooks();
 	}
 
 	/**

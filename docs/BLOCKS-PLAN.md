@@ -390,8 +390,99 @@ Extend the existing verification section in `README.md`:
    `tests/blocks-integration.php` (render() across every state, the
    block-renderer REST route, the block category) rather than one-off
    verification that isn't checked again later.
-5. `CEA_Elementor_Integration` + `CEA_Form_Elementor_Widget`, gated on
-   `elementor/loaded`. Install Elementor locally to test this phase.
+5. ✅ **Done** — `CEA_Elementor_Integration`
+   (`includes/integrations/class-cea-elementor-integration.php`) and
+   `CEA_Form_Elementor_Widget`
+   (`includes/blocks/form/class-cea-form-elementor-widget.php`), soft-gated
+   the way §7 planned but arrived at differently after reading Elementor's
+   actual source (installed at the user's direction — see below) rather
+   than guessing its API from memory:
+
+   - The originally planned outer `add_action('elementor/loaded', fn() =>
+     require ...)` wrapper turned out to be unnecessary. Elementor's own
+     `elementor/widgets/register` action already only fires from inside
+     Elementor's lazy `init_widgets()` (triggered on first access to the
+     widget list — confirmed by reading `includes/managers/widgets.php`),
+     which itself only runs if Elementor is loaded. So `CEA_Form_Block::
+     elementor_widget_class()` lazily `require_once`s the widget file
+     itself, right before returning the class name — safe because it's
+     only ever called from `CEA_Block_Registry::init_elementor()`, itself
+     only ever called from that same Elementor-only hook.
+     `CEA_Elementor_Integration` itself never references an `\Elementor\*`
+     class at file-load time (its method params are untyped), so it's
+     safe to `require_once` unconditionally in `cea-plugin.php` like any
+     other integration, with zero effect on a non-Elementor site.
+   - Confirmed via Elementor source, not memory: `register_controls()` is
+     the current (non-deprecated) override point; `Controls_Manager::
+     SELECT2` = `'select2'`; category registration is
+     `$elements_manager->add_category( $slug, ['title' => ..., 'icon' =>
+     'eicon-...'] )` on `elementor/elements/categories_registered`; widget
+     icons are `eicon-*` classes (confirmed `eicon-mail` and `eicon-plug`
+     actually exist in this Elementor version's icon font — the
+     originally-considered `eicon-form-horizontal` does not, it's an
+     Elementor Pro asset).
+   - The widget's `render()` constructs a fresh `CEA_Form_Block` and calls
+     its `render()` directly (not through the registry), since the widget
+     has no dependency on request/hook ordering — same "one render core"
+     as the Gutenberg side.
+
+   **Getting Elementor installed required a real decision, not just
+   code**: this sandbox's `eric` user owns only `wp-content/plugins/
+   cea-plugin/`, not `wp-content/plugins/` itself, and has no passwordless
+   `sudo` — so `wp plugin install elementor` was genuinely blocked, not a
+   sandbox restriction to route around. Asked the user rather than forcing
+   it; they installed Elementor 4.2.3 themselves via wp-admin.
+
+   **Verified live, same rigor as steps 1–4, with two real findings caught
+   along the way (not just confirmations):**
+   - Widget registers under the real `cea_form` name via Elementor's own
+     `Widgets_Manager::get_widget_types()` (which is what actually fires
+     `elementor/widgets/register`); `cea` category registers via
+     `Elements_Manager::get_categories()`.
+   - Full render-state matrix (no ID, unpublished, published-but-empty,
+     real form) exercised through `\Elementor\Plugin::$instance
+     ->elements_manager->create_element_instance()` +
+     `render_content()` — Elementor's own real instantiation path — as
+     both an `edit_posts` editor and an anonymous visitor. Identical
+     behavior to the Gutenberg block, as designed.
+   - **Finding #1**: an early check of `$widget->get_controls()['form_id']
+     ['options']` came back completely missing — looked like a bug in
+     `get_form_options()`. Traced it to Elementor's own
+     `Performance::should_optimize_controls()`, which deliberately strips
+     `label`/`options`/etc. from the controls stack on genuine front-end
+     requests (`! is_admin() && ! is_preview_mode() && ! REST_REQUEST` —
+     true in a bare `wp eval` CLI context) since the editor-only schema is
+     irrelevant there. Confirmed by forcing that flag off via reflection
+     and re-checking: `options` correctly included the published form and
+     excluded the draft. Not a defect — a testing-context artifact,
+     resolved by reading Elementor's source rather than assumed.
+   - **Finding #2**: the first full page-publish + real-HTTP end-to-end
+     check (mirroring step 4's) showed the hidden `cea_form_id` field but
+     none of the wrapper markup, no `elementor-widget-cea_form` class, and
+     no enqueued assets — WordPress was serving the raw `post_content`
+     fallback, not a live Elementor render. Cause: calling `Document::
+     save()` directly doesn't set `_elementor_edit_mode = builder`
+     (`Document::set_is_built_with_elementor()`, which Elementor's real
+     editor-save flow also calls) — without it, `is_built_with_elementor()`
+     is false and Elementor never engages its `the_content` filter. Fixed
+     the test to call `set_is_built_with_elementor( true )` before
+     `save()`; re-fetching then showed correct `elementor-widget-cea_form`
+     markup, the right `cea-form__form` class, and `forms.css`/`forms.js`
+     auto-enqueued — confirming the "one render core" design holds
+     through Elementor's actual live-page pipeline, not just the direct
+     widget-instantiation API.
+   - One test run left two fixture forms behind (root cause not fully
+     pinned down — most likely a duplicated `wp eval` invocation rather
+     than a `finally`-block failure, since the same try/finally pattern
+     was already confirmed reliable in step 4). Caught by the routine
+     leftover-fixture check, cleaned up, and every subsequent run verified
+     clean. Noted here rather than left unmentioned.
+   - All of this is now permanent, repeatable coverage: `tests/blocks-
+     smoke.php` checks widget/category registration (non-mutating);
+     `tests/blocks-integration.php` reuses the same `$draft_id` /
+     `$renderable_id` / `$editor_id` fixtures the Gutenberg checks already
+     created to exercise the full Elementor render-state matrix — one
+     fixture set covering both builders.
 6. Smoke tests + README updates (build step, capability notes, changelog
    entry for the next version bump).
 
