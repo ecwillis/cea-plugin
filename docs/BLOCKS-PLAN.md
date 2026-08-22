@@ -317,9 +317,79 @@ Extend the existing verification section in `README.md`:
    and publish-status filter) — both added to the README's Verification
    section. All manual test fixtures (forms, users) created during
    verification were deleted afterward; the live site was left clean.
-3. `CEA_Block_Base` / `CEA_Block_Registry` skeleton.
-4. Gutenberg `CEA_Form_Block`: real `render_callback`, `edit.js` with
-   `SelectControl` + `ServerSideRender`.
+3. ✅ **Done** — `CEA_Block_Base` (abstract contract: `slug()`,
+   `build_path()`, `render()`, `elementor_widget_class()` default `null`,
+   `normalize_attributes()` default passthrough) and `CEA_Block_Registry`
+   (`register()`/`get()`/`all()`, `init_gutenberg()`, `init_elementor()`,
+   plus a test-only `reset()`). Deliberately **not** wired into
+   `CEA_Blocks` yet — that happens in step 4 once the real form block
+   exists to register through it; for now it's exercised in
+   `tests/blocks-smoke.php` via a throwaway stub block type.
+
+   One real finding from testing this rigorously rather than trusting the
+   plan text: the original design (§5 above) had `init_gutenberg()` guard
+   itself with a `file_exists( block.json )` check before calling
+   `register_block_type()`, mirroring the same guard in
+   `CEA_Blocks::register_blocks()` from step 1. A mutation test (delete
+   the guard, rerun the smoke test, confirm it still passes) showed this
+   guard is redundant: WP core's own
+   `register_block_type_from_metadata()` already does that exact
+   `file_exists()` check internally and returns `false` cleanly with no
+   warnings even with `error_reporting(E_ALL)` on. Removed the guard from
+   both places rather than leaving dead defensive code, and updated the
+   docblocks to credit core's behavior instead of implying it was this
+   plugin's own protection.
+4. ✅ **Done** — `CEA_Form_Block extends CEA_Block_Base`
+   (`includes/blocks/form/class-cea-form-block.php`), registered through
+   `CEA_Block_Registry` from `CEA_Blocks::register_blocks()` (replacing the
+   step-1 placeholder's direct `register_block_type()` call). `edit.js`
+   has a `SelectControl` in `InspectorControls` fed by `GET /cea/v1/forms`
+   via `apiFetch`, and the canvas uses `ServerSideRender` — confirmed via
+   the actual `/wp/v2/block-renderer/cea/form` REST route, the same one
+   Gutenberg's `ServerSideRender` component calls, not just trusted by
+   convention. Also added the shared "CEA Plugin" block category
+   (`block_categories_all`) so this and future block types group together
+   in the inserter.
+
+   `CEA_Form_Block::render()` deliberately does not re-implement "is this
+   form displayable" — `CEA_Form_Renderer::render_shortcode()` already
+   owns that (missing ID, unpublished, empty fields, invalid action
+   config all return `''`, exactly like `[cea_form]`) — it only adds an
+   editor-only diagnostic on top, gated on `current_user_can( 'edit_posts'
+   )` so a public visitor never sees "select a form" text left over from
+   an unfinished page. All four states (no ID, unpublished, published-but-
+   empty, and a real renderable form) were exercised directly as both an
+   `edit_posts` editor and an anonymous visitor, not just asserted in the
+   abstract.
+
+   Verified beyond unit-level PHP: published a real page containing
+   `<!-- wp:cea/form {"formId":N} /-->` and fetched it over actual HTTP —
+   the form rendered with the correct hidden `cea_form_id` field, and
+   `forms.css`/`forms.js` were auto-enqueued exactly as they are for the
+   shortcode, confirming the "one render core" design goal (§1) holds
+   through the *entire* WordPress content pipeline, not just through a
+   direct PHP call. That page and its fixture form were deleted after.
+
+   Also caught and fixed a real bug in the *test* (not the code): an
+   integration-test assertion expected `render()` to return byte-identical
+   output for the same form given as an int vs. a string attribute. It
+   doesn't, because `CEA_Form_Renderer::render_shortcode()` increments a
+   static per-request instance counter into the DOM id on every call
+   (intentional — it's what lets the same form appear twice on one page
+   without id collisions), so two back-to-back calls for the same form
+   never match byte-for-byte. Confirmed this by reproducing it directly
+   before touching anything, then fixed the assertion to check the thing
+   that actually matters (the hidden `cea_form_id` field resolves to the
+   same form) instead of exact string equality. Also incidentally
+   confirmed the test harness's `try { ... } finally { cleanup }` pattern
+   correctly runs cleanup even when an assertion throws mid-test — checked
+   directly by leaving a failing assertion in place for one run and
+   confirming no fixtures were left behind.
+
+   All of the above is now permanent, repeatable coverage in
+   `tests/blocks-integration.php` (render() across every state, the
+   block-renderer REST route, the block category) rather than one-off
+   verification that isn't checked again later.
 5. `CEA_Elementor_Integration` + `CEA_Form_Elementor_Widget`, gated on
    `elementor/loaded`. Install Elementor locally to test this phase.
 6. Smoke tests + README updates (build step, capability notes, changelog

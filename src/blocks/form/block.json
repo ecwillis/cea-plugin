@@ -3,9 +3,9 @@
 	"apiVersion": 3,
 	"name": "cea/form",
 	"title": "CEA Form",
-	"category": "widgets",
+	"category": "cea",
 	"icon": "email-alt",
-	"description": "Placeholder scaffold for the CEA Form block. Form selection and dynamic rendering land in a later phase.",
+	"description": "Displays one of your published CEA forms.",
 	"textdomain": "cea-plugin",
 	"attributes": {
 		"formId": {

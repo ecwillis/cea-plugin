@@ -172,9 +172,13 @@ Custom actions register a definition with `CEA_Form_Action_Registry::register()`
 
 ## Theme blocks
 
-CEA Plugin is gaining a block framework so admin-editable content can be added to a live theme from the Gutenberg editor (and, later, Elementor). See [docs/BLOCKS-PLAN.md](docs/BLOCKS-PLAN.md) for the design and rollout plan.
+CEA Plugin ships a block framework so admin-editable content can be added to a live theme from the Gutenberg editor (and, later, Elementor) through one shared PHP render path per block type. See [docs/BLOCKS-PLAN.md](docs/BLOCKS-PLAN.md) for the design and rollout plan.
 
-Block source lives in `src/blocks/` and is built with `@wordpress/scripts` into `build/`, which is not committed to version control. Run `npm ci && npm run build` before packaging or deploying the plugin — `CEA_Blocks::register_blocks()` silently skips registration if `build/` is missing, so an unbuilt checkout won't fatal, but blocks won't appear in the editor either.
+### CEA Form block
+
+Insert **CEA Form** from the block inserter (under the **CEA Plugin** category) on any post, page, or template. Choose a published form from the dropdown in the block sidebar; the canvas preview is the real rendered form, not a mockup. Anyone who can edit posts/pages can insert and configure the block — placing an already-published form is a lighter permission than building one, which still requires the Forms admin capability. If the selected form is later unpublished or deleted, editors see an inline explanation in the editor; front-end visitors simply see nothing, matching how the `[cea_form]` shortcode already behaves for a missing form.
+
+Block source lives in `src/blocks/` and is built with `@wordpress/scripts` into `build/`, which is not committed to version control. Run `npm ci && npm run build` before packaging or deploying the plugin — `register_block_type()` itself no-ops safely (no fatal, no warning) when a block's built `block.json` is missing, so an unbuilt checkout won't break the site, but blocks won't appear in the editor either.
 
 ```bash
 npm ci

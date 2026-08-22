@@ -62,4 +62,79 @@ if ( did_action( 'elementor/loaded' ) ) {
 	);
 }
 
+// --- CEA_Block_Registry mechanics ---------------------------------------
+//
+// No production code registers through CEA_Block_Registry yet (see
+// docs/BLOCKS-PLAN.md, section 12, step 4), so this exercises it with a
+// throwaway stub block type rather than the real cea/form block.
+
+cea_blocks_smoke_assert( class_exists( 'CEA_Block_Base' ), 'Block base contract did not load.' );
+cea_blocks_smoke_assert( class_exists( 'CEA_Block_Registry' ), 'Block registry did not load.' );
+
+if ( ! class_exists( 'CEA_Blocks_Smoke_Stub_Block', false ) ) {
+	/**
+	 * Minimal stand-in block type used only to exercise CEA_Block_Registry.
+	 * Its build_path() intentionally does not exist, so init_gutenberg()
+	 * must skip it rather than fatal.
+	 */
+	class CEA_Blocks_Smoke_Stub_Block extends CEA_Block_Base {
+
+		/**
+		 * @return string
+		 */
+		public function slug() {
+			return 'cea-smoke-test/stub';
+		}
+
+		/**
+		 * @return string
+		 */
+		public function build_path() {
+			return CEA_PLUGIN_DIR . 'build/blocks/does-not-exist';
+		}
+
+		/**
+		 * @param array $attributes Normalized attributes.
+		 * @return string
+		 */
+		public function render( array $attributes ) {
+			return '';
+		}
+	}
+}
+
+$stub = new CEA_Blocks_Smoke_Stub_Block();
+
+cea_blocks_smoke_assert( null === $stub->elementor_widget_class(), 'Default elementor_widget_class() should be null.' );
+cea_blocks_smoke_assert(
+	array( 'a' => 1 ) === $stub->normalize_attributes( array( 'a' => 1 ) ),
+	'Default normalize_attributes() should pass attributes through unchanged.'
+);
+
+try {
+	CEA_Block_Registry::register( $stub );
+	cea_blocks_smoke_assert(
+		$stub === CEA_Block_Registry::get( 'cea-smoke-test/stub' ),
+		'Registry::get() did not return the registered block type.'
+	);
+	cea_blocks_smoke_assert(
+		array_key_exists( 'cea-smoke-test/stub', CEA_Block_Registry::all() ),
+		'Registry::all() is missing a registered block type.'
+	);
+
+	// register_block_type() itself no-ops safely on a missing block.json
+	// (verified directly against this WordPress version — see
+	// class-cea-block-registry.php); this just confirms that guarantee
+	// still holds end to end through init_gutenberg(), not that
+	// CEA_Block_Registry adds a guard of its own.
+	CEA_Block_Registry::init_gutenberg();
+	cea_blocks_smoke_assert(
+		! WP_Block_Type_Registry::get_instance()->is_registered( 'cea-smoke-test/stub' ),
+		'The registry should not register a block type whose build/ directory is missing.'
+	);
+} finally {
+	CEA_Block_Registry::reset();
+}
+cea_blocks_smoke_assert( array() === CEA_Block_Registry::all(), 'Registry::reset() did not clear registered block types.' );
+
 WP_CLI::success( 'CEA theme blocks smoke tests passed.' );
