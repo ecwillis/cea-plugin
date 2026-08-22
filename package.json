@@ -1,7 +1,7 @@
 {
   "name": "cea-plugin",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Build tooling for CEA Plugin's Gutenberg blocks.",
   "scripts": {
     "build": "wp-scripts build",

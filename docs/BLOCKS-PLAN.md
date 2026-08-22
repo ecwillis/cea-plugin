@@ -168,6 +168,13 @@ regardless of which editor produced the attributes.
 
 ## 7. Elementor: the CEA Form widget
 
+> **This section is the original design draft.** What actually got built
+> in step 12, step 5 differs in one way: no outer `elementor/loaded`
+> wrapper. Elementor's own `elementor/widgets/register` hook already only
+> fires from inside Elementor, so `CEA_Elementor_Integration` loads
+> unconditionally like any other integration, and only the widget class
+> file itself is lazily required. See step 5 for why.
+
 Loaded conditionally — nothing in this file executes unless Elementor is
 active:
 
@@ -322,8 +329,9 @@ Extend the existing verification section in `README.md`:
    `normalize_attributes()` default passthrough) and `CEA_Block_Registry`
    (`register()`/`get()`/`all()`, `init_gutenberg()`, `init_elementor()`,
    plus a test-only `reset()`). Deliberately **not** wired into
-   `CEA_Blocks` yet — that happens in step 4 once the real form block
-   exists to register through it; for now it's exercised in
+   `CEA_Blocks` at this point in the sequence — that happened in step 4
+   below, once the real form block existed to register through it. At
+   the time this step landed, it was exercised only in
    `tests/blocks-smoke.php` via a throwaway stub block type.
 
    One real finding from testing this rigorously rather than trusting the
@@ -483,8 +491,19 @@ Extend the existing verification section in `README.md`:
      `$renderable_id` / `$editor_id` fixtures the Gutenberg checks already
      created to exercise the full Elementor render-state matrix — one
      fixture set covering both builders.
-6. Smoke tests + README updates (build step, capability notes, changelog
-   entry for the next version bump).
+6. ✅ **Done** — smoke/integration tests were actually written and landed
+   incrementally alongside steps 1–5 (not deferred to the end), so this
+   step was really the wrap-up: re-read this document end to end for
+   internal consistency, confirmed `README.md` reads coherently as a
+   whole (Requirements, Theme blocks, Verification, Changelog), and
+   bumped the plugin to `0.6.0` — `cea-plugin.php` header +
+   `CEA_PLUGIN_VERSION`, `package.json` (+ resynced `package-lock.json`
+   via `npm install`) — with a changelog entry summarizing the block
+   framework, the Gutenberg block, the Elementor widget, the new build
+   step, and the WP 6.3 floor. Confirmed nothing in the codebase
+   hardcodes the literal string `0.5.0` (everything references
+   `CEA_PLUGIN_VERSION`) before bumping, so the version bump can't have
+   silently broken a cache-busted asset URL or a test assertion.
 
 ## Open items for later (not blocking this plan)
 

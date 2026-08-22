@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: CEA Plugin
- * Description: A WordPress form builder with SMTP delivery, Mailchimp integration, and private response storage.
- * Version: 0.5.0
+ * Description: A WordPress form builder with SMTP delivery, Mailchimp integration, private response storage, and Gutenberg/Elementor form blocks.
+ * Version: 0.6.0
  * Requires at least: 6.3
  * Requires PHP: 7.4
  * Text Domain: cea-plugin
@@ -10,7 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'CEA_PLUGIN_VERSION', '0.5.0' );
+define( 'CEA_PLUGIN_VERSION', '0.6.0' );
 define( 'CEA_PLUGIN_FILE', __FILE__ );
 define( 'CEA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'CEA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

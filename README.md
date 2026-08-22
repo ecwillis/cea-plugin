@@ -1,6 +1,6 @@
 # CEA Plugin
 
-CEA Plugin provides provider-neutral SMTP delivery, a schema-driven WordPress form builder, and private response storage.
+CEA Plugin provides provider-neutral SMTP delivery, a schema-driven WordPress form builder, private response storage, and Gutenberg/Elementor blocks for embedding forms in a theme.
 
 ## Requirements
 
@@ -187,7 +187,7 @@ npm run build
 
 During development, `npm run start` rebuilds on file changes, and `npm run lint:js` / `npm run lint:css` lint the block source (scoped to `src/`; the plugin's pre-existing hand-written JS/CSS in `assets/` and `tests/` predates this tooling and is intentionally not linted by it).
 
-Requires WordPress 6.3+ (bumped from 5.7) since block registration relies on `register_block_type()` reading a built `block.json` directory.
+The automated tests below cover registration, capability boundaries, and rendered output for both editors. Before shipping a change to the block or widget, also check it visually: insert **CEA Form** as an Administrator and as an Editor-role user in both Gutenberg and Elementor (if installed), confirm the sidebar/panel picker only lists published forms, and confirm the front-end page matches what the editor previewed.
 
 ## Verification
 
@@ -231,6 +231,14 @@ wp eval-file wp-content/plugins/cea-plugin/tests/blocks-integration.php --path=/
 ```
 
 ## Changelog
+
+### 0.6.0
+
+- Added a block framework (`CEA_Block_Base` / `CEA_Block_Registry`) so admin-editable content renders through one shared PHP path regardless of which page builder placed it.
+- Added the **CEA Form** Gutenberg block: published-forms picker, real server-rendered canvas preview, and a new `GET /cea/v1/forms` REST route scoped to `edit_posts`.
+- Added the **CEA Form** Elementor widget under a shared "CEA Plugin" category in both editors. Elementor is an optional soft dependency — the widget registers only when Elementor is active, and the Gutenberg block works fully without it.
+- Introduced the plugin's first Node/npm build step (`@wordpress/scripts`) for block source under `src/blocks/`; see [Theme blocks](#theme-blocks).
+- Bumped the minimum WordPress version to 6.3 (from 5.7), required for directory-path block registration.
 
 ### 0.5.0
 
