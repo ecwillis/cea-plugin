@@ -4,8 +4,9 @@ CEA Plugin provides provider-neutral SMTP delivery, a schema-driven WordPress fo
 
 ## Requirements
 
-- WordPress 5.7 or later
+- WordPress 6.3 or later
 - PHP 7.4 or later
+- Node.js and npm (to build theme blocks — see [Theme blocks](#theme-blocks))
 
 ## Forms
 
@@ -169,12 +170,27 @@ Limits and transport:
 
 Custom actions register a definition with `CEA_Form_Action_Registry::register()`. Each definition supplies a label plus sanitize, validate, render, and execute callbacks. Execute callbacks must return `true` or `WP_Error`.
 
+## Theme blocks
+
+CEA Plugin is gaining a block framework so admin-editable content can be added to a live theme from the Gutenberg editor (and, later, Elementor). See [docs/BLOCKS-PLAN.md](docs/BLOCKS-PLAN.md) for the design and rollout plan.
+
+Block source lives in `src/blocks/` and is built with `@wordpress/scripts` into `build/`, which is not committed to version control. Run `npm ci && npm run build` before packaging or deploying the plugin — `CEA_Blocks::register_blocks()` silently skips registration if `build/` is missing, so an unbuilt checkout won't fatal, but blocks won't appear in the editor either.
+
+```bash
+npm ci
+npm run build
+```
+
+During development, `npm run start` rebuilds on file changes, and `npm run lint:js` / `npm run lint:css` lint the block source (scoped to `src/`; the plugin's pre-existing hand-written JS/CSS in `assets/` and `tests/` predates this tooling and is intentionally not linted by it).
+
+Requires WordPress 6.3+ (bumped from 5.7) since block registration relies on `register_block_type()` reading a built `block.json` directory.
+
 ## Verification
 
 Run PHP syntax checks:
 
 ```bash
-find . -type f -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+find . -type f -name '*.php' -not -path './.git/*' -not -path './node_modules/*' -not -path './build/*' -print0 | xargs -0 -n1 php -l
 ```
 
 Run JavaScript syntax checks:

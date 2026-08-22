@@ -25,6 +25,7 @@ final class CEA_Plugin {
 		CEA_Form_Submission_Settings::register_hooks();
 		CEA_Form_Submission_Privacy::register_hooks();
 		CEA_SMTP_Mailer::register_hooks();
+		CEA_Blocks::register_hooks();
 
 		if ( is_admin() ) {
 			CEA_Forms_Admin::register_hooks();
