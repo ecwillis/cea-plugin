@@ -3,7 +3,7 @@
  * Plugin Name: CEA Plugin
  * Description: A WordPress form builder with SMTP delivery, Mailchimp integration, and private response storage.
  * Version: 0.5.0
- * Requires at least: 5.7
+ * Requires at least: 6.3
  * Requires PHP: 7.4
  * Text Domain: cea-plugin
  */
@@ -31,6 +31,13 @@ require_once CEA_PLUGIN_DIR . 'includes/forms/class-cea-form-schema.php';
 require_once CEA_PLUGIN_DIR . 'includes/forms/class-cea-form-renderer.php';
 require_once CEA_PLUGIN_DIR . 'includes/forms/class-cea-form-submission-handler.php';
 require_once CEA_PLUGIN_DIR . 'includes/forms/class-cea-forms.php';
+require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-form-picker.php';
+require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-rest-form-picker-controller.php';
+require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-block-base.php';
+require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-block-registry.php';
+require_once CEA_PLUGIN_DIR . 'includes/blocks/form/class-cea-form-block.php';
+require_once CEA_PLUGIN_DIR . 'includes/integrations/class-cea-elementor-integration.php';
+require_once CEA_PLUGIN_DIR . 'includes/blocks/class-cea-blocks.php';
 require_once CEA_PLUGIN_DIR . 'admin/class-cea-smtp-settings-page.php';
 require_once CEA_PLUGIN_DIR . 'admin/class-cea-mailchimp-settings-page.php';
 require_once CEA_PLUGIN_DIR . 'admin/class-cea-forms-admin.php';

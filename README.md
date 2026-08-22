@@ -4,8 +4,9 @@ CEA Plugin provides provider-neutral SMTP delivery, a schema-driven WordPress fo
 
 ## Requirements
 
-- WordPress 5.7 or later
+- WordPress 6.3 or later
 - PHP 7.4 or later
+- Node.js and npm (to build theme blocks — see [Theme blocks](#theme-blocks))
 
 ## Forms
 
@@ -169,12 +170,31 @@ Limits and transport:
 
 Custom actions register a definition with `CEA_Form_Action_Registry::register()`. Each definition supplies a label plus sanitize, validate, render, and execute callbacks. Execute callbacks must return `true` or `WP_Error`.
 
+## Theme blocks
+
+CEA Plugin ships a block framework so admin-editable content can be added to a live theme from the Gutenberg editor or Elementor, through one shared PHP render path per block type. See [docs/BLOCKS-PLAN.md](docs/BLOCKS-PLAN.md) for the design and rollout plan.
+
+### CEA Form block
+
+Insert **CEA Form** from the Gutenberg block inserter (under the **CEA Plugin** category), or drag the **CEA Form** widget from Elementor's **CEA Plugin** category onto an Elementor-built page. Choose a published form from the dropdown; the preview is the real rendered form in both editors, not a mockup. Anyone who can edit posts/pages can insert and configure it — placing an already-published form is a lighter permission than building one, which still requires the Forms admin capability. If the selected form is later unpublished or deleted, editors see an inline explanation; front-end visitors simply see nothing, matching how the `[cea_form]` shortcode already behaves for a missing form. Elementor is entirely optional: the widget only registers when Elementor is active, and the Gutenberg block works fully without it.
+
+Block source lives in `src/blocks/` and is built with `@wordpress/scripts` into `build/`, which is not committed to version control. Run `npm ci && npm run build` before packaging or deploying the plugin — `register_block_type()` itself no-ops safely (no fatal, no warning) when a block's built `block.json` is missing, so an unbuilt checkout won't break the site, but blocks won't appear in the editor either.
+
+```bash
+npm ci
+npm run build
+```
+
+During development, `npm run start` rebuilds on file changes, and `npm run lint:js` / `npm run lint:css` lint the block source (scoped to `src/`; the plugin's pre-existing hand-written JS/CSS in `assets/` and `tests/` predates this tooling and is intentionally not linted by it).
+
+Requires WordPress 6.3+ (bumped from 5.7) since block registration relies on `register_block_type()` reading a built `block.json` directory.
+
 ## Verification
 
 Run PHP syntax checks:
 
 ```bash
-find . -type f -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l
+find . -type f -name '*.php' -not -path './.git/*' -not -path './node_modules/*' -not -path './build/*' -print0 | xargs -0 -n1 php -l
 ```
 
 Run JavaScript syntax checks:
@@ -196,6 +216,18 @@ Run the database integration tests. Test responses are permanently deleted in a 
 
 ```bash
 wp eval-file wp-content/plugins/cea-plugin/tests/submissions-integration.php --path=/path/to/wordpress
+```
+
+Run the non-mutating theme blocks smoke tests (requires `npm run build` first, since it asserts `cea/form` is registered):
+
+```bash
+wp eval-file wp-content/plugins/cea-plugin/tests/blocks-smoke.php --path=/path/to/wordpress
+```
+
+Run the theme blocks integration tests. Test forms and test users are permanently deleted in a cleanup block:
+
+```bash
+wp eval-file wp-content/plugins/cea-plugin/tests/blocks-integration.php --path=/path/to/wordpress
 ```
 
 ## Changelog

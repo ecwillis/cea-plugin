@@ -1,0 +1,20 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "cea/form",
+	"title": "CEA Form",
+	"category": "cea",
+	"icon": "email-alt",
+	"description": "Displays one of your published CEA forms.",
+	"textdomain": "cea-plugin",
+	"attributes": {
+		"formId": {
+			"type": "number",
+			"default": 0
+		}
+	},
+	"supports": {
+		"html": false
+	},
+	"editorScript": "file:./index.js"
+}
